@@ -18,16 +18,13 @@
       font-family: system-ui, -apple-system, sans-serif;
       color: #00f0ff;
     }
-
-    /* Container dos Olhos */
     .face {
       display: flex;
       gap: 12vw;
       align-items: center;
       justify-content: center;
-      transition: transform 0.4s ease;
+      cursor: pointer;
     }
-
     .eye {
       width: 24vw;
       height: 28vw;
@@ -37,11 +34,8 @@
       border-radius: 35% 35% 40% 40%;
       box-shadow: 0 0 35px rgba(0, 240, 255, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.8);
       position: relative;
-      transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
       animation: blink 4.5s infinite;
     }
-
-    /* Brilho interno do olho */
     .eye::after {
       content: '';
       position: absolute;
@@ -52,23 +46,121 @@
       background: rgba(255, 255, 255, 0.9);
       border-radius: 50%;
     }
+    body.listening .eye { background: #00ff88; box-shadow: 0 0 45px rgba(0, 255, 136, 0.8); transform: scale(1.08); }
+    body.thinking .eye { background: #ffaa00; box-shadow: 0 0 40px rgba(255, 170, 0, 0.7); height: 12vw; max-height: 90px; border-radius: 20px; animation: none; }
+    body.speaking .eye { background: #00f0ff; border-radius: 50% 50% 25% 25%; animation: talkBounce 0.35s infinite alternate; }
+    @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.05); } }
+    @keyframes talkBounce { 0% { transform: scaleY(0.85) scaleX(1.05); } 100% { transform: scaleY(1.05) scaleX(0.95); } }
+    #status { position: absolute; bottom: 20px; font-size: 14px; opacity: 0.6; text-align: center; padding: 0 20px; }
+    #config-btn { position: absolute; top: 15px; right: 15px; background: transparent; border: none; color: rgba(255,255,255,0.6); font-size: 24px; cursor: pointer; z-index: 20; }
+    #modal { display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0.92); justify-content: center; align-items: center; z-index: 10; }
+    .modal-box { background: #14141c; padding: 22px; border-radius: 14px; width: 90%; max-width: 400px; border: 1px solid #333; color: #fff; }
+    .modal-box input, .modal-box textarea { width: 100%; margin: 8px 0 15px; padding: 10px; background: #0a0a0f; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; }
+    .modal-box button { background: #00f0ff; color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; }
+  </style>
+</head>
+<body>
 
-    /* Estados e Expressões */
-    body.listening .eye {
-      background: #00ff88;
-      box-shadow: 0 0 45px rgba(0, 255, 136, 0.8);
-      transform: scale(1.08);
+  <button id="config-btn" onclick="openConfig()">⚙️</button>
+
+  <div class="face" id="face" onclick="startListening()">
+    <div class="eye"></div>
+    <div class="eye"></div>
+  </div>
+
+  <div id="status">Toque nos olhos para falar</div>
+
+  <div id="modal">
+    <div class="modal-box">
+      <h3>Configurar Robô</h3>
+      <p style="font-size:12px; opacity:0.7; margin-bottom:10px;">Cole sua chave do Gemini para habilitar a IA:</p>
+      <label>Chave API (Gemini):</label>
+      <input type="password" id="apiKey" placeholder="Cole aqui...">
+      <label>Personalidade:</label>
+      <textarea id="persona" rows="3">Você é um mini robô de mesa sarcástico, preguiçoso e bem-humorado. Responda sempre em português do Brasil, de forma curta (máximo 2 frases), direta e engraçada, sem usar emojis ou asteriscos.</textarea>
+      <button onclick="saveConfig()">Salvar e Iniciar</button>
+    </div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const modal = document.getElementById('modal');
+
+    let API_KEY = localStorage.getItem('robo_api_key') || '';
+    let PERSONA = localStorage.getItem('robo_persona') || document.getElementById('persona').value;
+
+    document.getElementById('apiKey').value = API_KEY;
+    document.getElementById('persona').value = PERSONA;
+
+    if (API_KEY) modal.style.display = 'none';
+
+    function openConfig() { modal.style.display = 'flex'; }
+
+    function saveConfig() {
+      API_KEY = document.getElementById('apiKey').value.trim();
+      PERSONA = document.getElementById('persona').value.trim();
+      if (!API_KEY) { alert("Insira a chave da API!"); return; }
+      localStorage.setItem('robo_api_key', API_KEY);
+      localStorage.setItem('robo_persona', PERSONA);
+      modal.style.display = 'none';
+      statusEl.innerText = "Pronto! Toque nos olhos para falar.";
     }
 
-    body.thinking .eye {
-      background: #ffaa00;
-      box-shadow: 0 0 40px rgba(255, 170, 0, 0.7);
-      height: 12vw;
-      max-height: 90px;
-      border-radius: 20px;
-      animation: none;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+    if (recognition) {
+      recognition.lang = 'pt-BR';
+      recognition.interimResults = false;
+      recognition.onresult = async (e) => {
+        const text = e.results[0][0].transcript;
+        document.body.className = 'thinking';
+        statusEl.innerText = `"${text}"`;
+        await askGemini(text);
+      };
+      recognition.onerror = () => { document.body.className = ''; statusEl.innerText = "Toque para tentar de novo."; };
     }
 
-    body.speaking .eye {
-      background
-      
+    function startListening() {
+      if (!API_KEY) { openConfig(); return; }
+      if (!recognition) { alert("Navegador sem suporte a voz."); return; }
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      try {
+        recognition.start();
+        document.body.className = 'listening';
+        statusEl.innerText = "Ouvindo...";
+      } catch (e) {}
+    }
+
+    async function askGemini(text) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: PERSONA }] },
+            contents: [{ parts: [{ text }] }]
+          })
+        });
+        const data = await res.json();
+        speak(data.candidates[0].content.parts[0].text);
+      } catch (err) {
+        document.body.className = '';
+        statusEl.innerText = "Erro na API. Confira sua chave.";
+      }
+    }
+
+    function speak(text) {
+      document.body.className = 'speaking';
+      statusEl.innerText = text;
+      if (!window.speechSynthesis) { document.body.className = ''; return; }
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'pt-BR';
+      utter.pitch = 1.15;
+      utter.rate = 1.05;
+      utter.onend = () => { document.body.className = ''; };
+      window.speechSynthesis.speak(utter.cloneNode ? utter : utter);
+    }
+  </script>
+</body>
+</html>
