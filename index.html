@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Robô Assistente</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background-color: #050508;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #00f0ff;
+    }
+
+    /* Container dos Olhos */
+    .face {
+      display: flex;
+      gap: 12vw;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.4s ease;
+    }
+
+    .eye {
+      width: 24vw;
+      height: 28vw;
+      max-width: 180px;
+      max-height: 210px;
+      background: #00f0ff;
+      border-radius: 35% 35% 40% 40%;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.8);
+      position: relative;
+      transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+      animation: blink 4.5s infinite;
+    }
+
+    /* Brilho interno do olho */
+    .eye::after {
+      content: '';
+      position: absolute;
+      top: 15%;
+      left: 18%;
+      width: 22%;
+      height: 22%;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 50%;
+    }
+
+    /* Estados e Expressões */
+    body.listening .eye {
+      background: #00ff88;
+      box-shadow: 0 0 45px rgba(0, 255, 136, 0.8);
+      transform: scale(1.08);
+    }
+
+    body.thinking .eye {
+      background: #ffaa00;
+      box-shadow: 0 0 40px rgba(255, 170, 0, 0.7);
+      height: 12vw;
+      max-height: 90px;
+      border-radius: 20px;
+      animation: none;
+    }
+
+    body.speaking .eye {
+      background
+      
