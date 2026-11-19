@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Robô Assistente</title>
+  <title>Robô de Mesa</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body {
-      background-color: #050508;
+      background: #06070c;
       height: 100vh;
       width: 100vw;
       overflow: hidden;
@@ -32,7 +32,7 @@
       max-height: 210px;
       background: #00f0ff;
       border-radius: 35% 35% 40% 40%;
-      box-shadow: 0 0 35px rgba(0, 240, 255, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.55), inset 0 0 15px rgba(255, 255, 255, 0.8);
       position: relative;
       animation: blink 4.5s infinite;
     }
@@ -51,40 +51,182 @@
     body.speaking .eye { background: #00f0ff; border-radius: 50% 50% 25% 25%; animation: talkBounce 0.35s infinite alternate; }
     @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.05); } }
     @keyframes talkBounce { 0% { transform: scaleY(0.85) scaleX(1.05); } 100% { transform: scaleY(1.05) scaleX(0.95); } }
-    #status { position: absolute; bottom: 20px; font-size: 14px; opacity: 0.6; text-align: center; padding: 0 20px; }
-    #config-btn { position: absolute; top: 15px; right: 15px; background: transparent; border: none; color: rgba(255,255,255,0.6); font-size: 24px; cursor: pointer; z-index: 20; }
-    #modal { display: flex; position: fixed; inset: 0; background: rgba(0,0,0,0.92); justify-content: center; align-items: center; z-index: 10; }
-    .modal-box { background: #14141c; padding: 22px; border-radius: 14px; width: 90%; max-width: 400px; border: 1px solid #333; color: #fff; }
-    .modal-box input, .modal-box textarea { width: 100%; margin: 8px 0 15px; padding: 10px; background: #0a0a0f; border: 1px solid #444; color: #fff; border-radius: 6px; font-size: 14px; }
-    .modal-box button { background: #00f0ff; color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; }
+
+    #status {
+      position: absolute;
+      bottom: 72px;
+      font-size: 15px;
+      opacity: 0.85;
+      text-align: center;
+      padding: 0 20px;
+      max-width: 92%;
+    }
+    .bar {
+      position: absolute;
+      bottom: 16px;
+      display: flex;
+      gap: 8px;
+      width: 92%;
+      max-width: 440px;
+    }
+    .bar input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #2b3344;
+      background: #111520;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .bar button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      background: #00f0ff;
+      color: #041014;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #config-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.65);
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    .modal-box {
+      background: #141824;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 380px;
+      border: 1px solid #2f384d;
+      color: #fff;
+    }
+    .modal-box p { font-size: 13px; opacity: 0.8; margin: 8px 0 14px; line-height: 1.4; }
+    .modal-box button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #00f0ff;
+      color: #041014;
+      font-weight: 700;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-  <button id="config-btn" onclick="openConfig()">⚙️</button>
+  <button id="config-btn" onclick="openModal()">⚙️</button>
 
-  <div class="face" id="face" onclick="startListening()">
+  <div class="face" id="face" onclick="startVoice()">
     <div class="eye"></div>
     <div class="eye"></div>
   </div>
 
-  <div id="status">Toque nos olhos para falar</div>
+  <div id="status">Toque nos olhos para falar ou digite abaixo</div>
+
+  <div class="bar">
+    <input type="text" id="msg" placeholder="Fale algo com o robô..." onkeydown="if(event.key==='Enter') sendText()">
+    <button onclick="sendText()">Enviar</button>
+  </div>
 
   <div id="modal">
     <div class="modal-box">
-      <h3>Configurar Robô</h3>
-      <p style="font-size:12px; opacity:0.7; margin-bottom:10px;">Cole sua chave do Gemini para habilitar a IA:</p>
-      <label>Chave API (Gemini):</label>
-      <input type="password" id="apiKey" placeholder="Cole aqui...">
-      <label>Personalidade:</label>
-      <textarea id="persona" rows="3">Você é um mini robô de mesa sarcástico, preguiçoso e bem-humorado. Responda sempre em português do Brasil, de forma curta (máximo 2 frases), direta e engraçada, sem usar emojis ou asteriscos.</textarea>
-      <button onclick="saveConfig()">Salvar e Iniciar</button>
+      <h3>Modo Sem Chave API</h3>
+      <p>Esta versão funciona direto no navegador sem depender de chave de API do Gemini. Toque nos olhos para usar o microfone ou digite uma mensagem na barra inferior.</p>
+      <button onclick="closeModal()">Fechar</button>
     </div>
   </div>
 
   <script>
     const statusEl = document.getElementById('status');
+    const msgEl = document.getElementById('msg');
     const modal = document.getElementById('modal');
 
-    let API_KEY = localStorage.getItem('
-                                       
+    const respostas = [
+      "Fala sério, você me acordou só para isso?",
+      "Modo preguiça ativado. Manda a próxima que eu finjo que ligo.",
+      "Recebi o recado. Meu processador já está cansado só de pensar.",
+      "Olha, por esse salário eu até que respondo rápido.",
+      "Tudo certo por aqui, tirando a falta de vontade de trabalhar."
+    ];
+
+    function openModal() { modal.style.display = 'flex'; }
+    function closeModal() { modal.style.display = 'none'; }
+
+    function responder(textoUsuario) {
+      document.body.className = 'thinking';
+      statusEl.innerText = `Você: "${textoUsuario}"`;
+
+      setTimeout(() => {
+        const base = respostas[Math.floor(Math.random() * respostas.length)];
+        const fala = textoUsuario.toLowerCase().includes("oi") || textoUsuario.toLowerCase().includes("olá")
+          ? "Oi! Já estou aqui olhando para o nada como sempre."
+          : base;
+
+        document.body.className = 'speaking';
+        statusEl.innerText = fala;
+
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(fala);
+          utter.lang = 'pt-BR';
+          utter.onend = () => { document.body.className = ''; };
+          window.speechSynthesis.speak(utter);
+        } else {
+          setTimeout(() => { document.body.className = ''; }, 2000);
+        }
+      }, 600);
+    }
+
+    function sendText() {
+      const txt = msgEl.value.trim();
+      if (!txt) return;
+      msgEl.value = '';
+      responder(txt);
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+    if (recognition) {
+      recognition.lang = 'pt-BR';
+      recognition.interimResults = false;
+      recognition.onresult = (e) => {
+        responder(e.results[0][0].transcript);
+      };
+      recognition.onerror = () => {
+        document.body.className = '';
+        statusEl.innerText = "Não peguei sua voz. Tente digitar ou tocar de novo.";
+      };
+    }
+
+    function startVoice() {
+      if (!recognition) {
+        statusEl.innerText = "Microfone indisponível aqui. Use a caixa de texto.";
+        return;
+      }
+      try {
+        recognition.start();
+        document.body.className = 'listening';
+        statusEl.innerText = "Ouvindo...";
+      } catch (e) {}
+    }
+  </script>
+</body>
+</html>
